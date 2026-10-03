@@ -259,6 +259,17 @@
       </div>
       <button type="submit" class="full-width">Save Profile to Azure MySQL</button>
     </form>
+
+    <!-- Referral Module Form (`referral` table) -->
+    <h3 style="text-align: left; font-size: 18px; margin-top: 25px; margin-bottom: 15px; color: #38bdf8;">🤝 Refer a Friend (`referral` Table)</h3>
+    <form id="referral-form" onsubmit="sendReferral(event)">
+      <div class="form-group">
+        <label>Friend's Email Address *</label>
+        <input type="email" id="referred_email" placeholder="friend@example.com" required>
+      </div>
+      <button type="submit" class="full-width" style="background: #059669; color: #fff;">Send Referral Invitation</button>
+    </form>
+    <div id="referrals-list" style="margin-top: 15px; text-align: left; font-size: 13px;"></div>
   </div>
 
   <div id="output-response"></div>
@@ -384,6 +395,60 @@
       showOutput(JSON.stringify(data, null, 2));
     } catch (err) {
       showOutput("Error saving profile: " + err.message);
+    }
+  }
+
+  async function sendReferral(e) {
+    e.preventDefault();
+    showOutput("Recording referral in Azure MySQL `referral` table...");
+
+    // Auto-detect platform mode (app vs website)
+    const isMobileApp = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || !!window.Capacitor || !!window.ReactNativeWebView;
+    const detectedMode = isMobileApp ? 'app' : 'website';
+
+    const payload = {
+      referred_email: document.getElementById('referred_email').value,
+      referred_mode: detectedMode
+    };
+
+    try {
+      const res = await fetch(`${WORKER_API_URL}/api/student/referral`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userJwtToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showOutput(JSON.stringify(data, null, 2));
+      if (res.ok) {
+        document.getElementById('referred_email').value = '';
+        fetchReferrals();
+      }
+    } catch (err) {
+      showOutput("Error sending referral: " + err.message);
+    }
+  }
+
+  async function fetchReferrals() {
+    try {
+      const res = await fetch(`${WORKER_API_URL}/api/student/referrals`, {
+        headers: { 'Authorization': `Bearer ${userJwtToken}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.referrals) {
+        const el = document.getElementById('referrals-list');
+        if (data.referrals.length === 0) {
+          el.innerHTML = '<span style="color: var(--muted);">No referrals sent yet. Invite your friends!</span>';
+        } else {
+          el.innerHTML = '<strong>Your Sent Referrals:</strong><ul style="margin-top: 5px; padding-left: 20px;">' +
+            data.referrals.map(r => `<li>${r.referred_email} (${r.referred_mode}) - <span style="color: ${r.referred_user_id ? '#4ade80' : '#f59e0b'};">${r.referred_user_id ? 'Joined' : 'Pending'}</span></li>`).join('') +
+            '</ul>';
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching referrals:', err);
     }
   }
 
