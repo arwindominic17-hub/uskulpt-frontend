@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>uSkulpt Student Portal - Cloudflare Production</title>
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .auth-card {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 650px;
+      padding: 32px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    h1, h2, h3 {
+      font-size: 24px;
+      color: var(--accent);
+      text-align: center;
+      margin-top: 0;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin-top: 10px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .divider {
+      text-align: center;
+      margin: 20px 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .google-btn-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    #output-response {
+      margin-top: 20px;
+      padding: 15px;
+      background: #020617;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #4ade80;
+      word-break: break-all;
+      border: 1px solid #334155;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    .tab-switch {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 10px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 5px 10px;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      font-weight: bold;
+      border-bottom: 2px solid var(--accent);
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 13px;
+      margin-bottom: 15px;
+      background: #059669;
+      color: #ecfdf5;
+    }
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: #090d16;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .user-avatar {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .full-width {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-card">
+  <h1>uSkulpt Student Portal</h1>
+
+  <!-- Login Mode Screen -->
+  <div id="login-screen">
+    <!-- Google Login Button -->
+    <div class="google-btn-container">
+      <div id="g_id_onload"
+           data-client_id="323661162212-8vvl3a3pgkofhhs3cbvpkuulno20k4kd.apps.googleusercontent.com"
+           data-callback="handleGoogleLogin">
+      </div>
+      <div class="g_id_signin" data-type="standard" data-theme="filled_blue" data-size="large"></div>
+    </div>
+
+    <div class="divider">─ OR ─</div>
+
+    <!-- Switch Tabs -->
+    <div class="tab-switch">
+      <button type="button" class="tab-btn active" id="tab-login" onclick="switchMode('login')">Sign In</button>
+      <button type="button" class="tab-btn" id="tab-register" onclick="switchMode('register')">Register</button>
+    </div>
+
+    <!-- Auth Form -->
+    <form id="auth-form" onsubmit="handleFormSubmit(event)">
+      <div class="form-group" id="group-first-name" style="display: none;">
+        <label>First Name *</label>
+        <input type="text" id="first_name" placeholder="John">
+      </div>
+      <div class="form-group" id="group-username" style="display: none;">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="johndoe32">
+      </div>
+      <div class="form-group">
+        <label id="label-email-username">Username or Email Address *</label>
+        <input type="text" id="email" placeholder="username or user@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>Password *</label>
+        <input type="password" id="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" id="submit-btn">Sign In</button>
+    </form>
+  </div>
+
+  <!-- Student Dashboard & Profile Screen -->
+  <div id="dashboard-screen" style="display: none;">
+    <div class="status-badge"> Authenticated Student Session</div>
+
+    <div class="user-profile">
+      <img id="user-pic" class="user-avatar" src="" alt="Avatar" />
+      <div>
+        <h3 id="user-name" style="margin: 0; text-align: left; color: #f8fafc;">User Name</h3>
+        <span id="user-email" style="color: var(--muted); font-size: 13px;">user@example.com</span><br>
+        <span style="color: var(--accent); font-size: 12px; font-weight: bold;">Role: Student (role_id: 1)</span>
+      </div>
+    </div>
+
+    <!-- Student Profile Form (`student_profile` table) -->
+    <h3 style="text-align: left; font-size: 18px; margin-bottom: 15px;">Update Student Profile Details</h3>
+    <form id="profile-form" onsubmit="saveStudentProfile(event)" class="form-grid">
+      <div class="full-width">
+        <label>School Name</label>
+        <input type="text" id="school_name" placeholder="e.g. St. Xavier High School">
+      </div>
+      <div>
+        <label>Class Level</label>
+        <select id="class_level_id">
+          <option value="9">Class 9</option>
+          <option value="10" selected>Class 10</option>
+          <option value="11">Class 11</option>
+          <option value="12">Class 12</option>
+        </select>
+      </div>
+      <div>
+        <label>School Board</label>
+        <select id="school_board_id">
+          <option value="1">CBSE</option>
+          <option value="2">ICSE</option>
+          <option value="3">State Board</option>
+          <option value="4">IB / Other</option>
+        </select>
+      </div>
+      <div>
+        <label>Stream (for Class 11/12)</label>
+        <select id="current_stream_id">
+          <option value="">None (Class 9/10)</option>
+          <option value="1">Science (PCM/PCB)</option>
+          <option value="2">Commerce</option>
+          <option value="3">Arts / Humanities</option>
+        </select>
+      </div>
+      <div>
+        <label>Parent / Guardian Email</label>
+        <input type="email" id="guardian_email" placeholder="parent@example.com">
+      </div>
+      <button type="submit" class="full-width">Save Profile to Azure MySQL</button>
+    </form>
+  </div>
+
+  <div id="output-response"></div>
+</div>
+
+<script>
+  // Deployed Cloudflare Worker API URL (handles pages.dev & workers.dev automatically)
+  const WORKER_API_URL = 'https://uskulpt-backend-worker.uskulpt-cloudflare.workers.dev';
+  let userJwtToken = '';
+
+  let currentMode = 'login';
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+    document.getElementById('group-first-name').style.display = mode === 'register' ? 'block' : 'none';
+    document.getElementById('group-username').style.display = mode === 'register' ? 'block' : 'none';
+    document.getElementById('label-email-username').innerText = mode === 'register' ? 'Email Address *' : 'Username or Email Address *';
+    document.getElementById('email').placeholder = mode === 'register' ? 'user@example.com' : 'username or user@example.com';
+    document.getElementById('submit-btn').innerText = mode === 'register' ? 'Register Student' : 'Sign In';
+  }
+
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    showOutput("Sending request to Cloudflare Worker API...");
+
+    const inputVal = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const first_name = document.getElementById('first_name').value;
+    const username = document.getElementById('username').value;
+
+    const endpoint = currentMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+    const payload = currentMode === 'register' 
+      ? { first_name, username, email: inputVal, password } 
+      : { username_or_email: inputVal, password };
+
+    try {
+      const res = await fetch(`${WORKER_API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showOutput(JSON.stringify(data, null, 2));
+
+      if (res.ok && data.token) {
+        userJwtToken = data.token;
+        renderDashboard(data.user);
+      }
+    } catch (err) {
+      showOutput("Error connecting to Cloudflare Worker: " + err.message);
+    }
+  }
+
+  async function handleGoogleLogin(response) {
+    showOutput("Verifying Google Token via Cloudflare Worker API...");
+    try {
+      const res = await fetch(`${WORKER_API_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: response.credential })
+      });
+      const data = await res.json();
+      showOutput(JSON.stringify(data, null, 2));
+
+      if (res.ok && data.token) {
+        userJwtToken = data.token;
+        renderDashboard(data.user);
+      }
+    } catch (err) {
+      showOutput("Google Worker Error: " + err.message);
+    }
+  }
+
+  function renderDashboard(user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard-screen').style.display = 'block';
+
+    document.getElementById('user-name').innerText = `${user.first_name} ${user.last_name || ''}`;
+    document.getElementById('user-email').innerText = user.email;
+    document.getElementById('user-pic').src = user.profile_pic_link || 'https://via.placeholder.com/55';
+
+    fetchStudentProfile();
+  }
+
+  async function fetchStudentProfile() {
+    try {
+      const res = await fetch(`${WORKER_API_URL}/api/student/profile`, {
+        headers: { 'Authorization': `Bearer ${userJwtToken}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.profile) {
+        showOutput(JSON.stringify(data.profile, null, 2));
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    }
+  }
+
+  async function saveStudentProfile(e) {
+    e.preventDefault();
+    showOutput("Saving profile to Azure MySQL via Cloudflare Worker...");
+
+    const payload = {
+      school_name: document.getElementById('school_name').value,
+      class_level_id: parseInt(document.getElementById('class_level_id').value),
+      school_board_id: parseInt(document.getElementById('school_board_id').value),
+      current_stream_id: document.getElementById('current_stream_id').value ? parseInt(document.getElementById('current_stream_id').value) : null,
+      guardian_email: document.getElementById('guardian_email').value
+    };
+
+    try {
+      const res = await fetch(`${WORKER_API_URL}/api/student/profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userJwtToken}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showOutput(JSON.stringify(data, null, 2));
+    } catch (err) {
+      showOutput("Error saving profile: " + err.message);
+    }
+  }
+
+  function showOutput(text) {
+    const el = document.getElementById('output-response');
+    el.style.display = 'block';
+    el.innerText = text;
+  }
+</script>
+</body>
+</html>
